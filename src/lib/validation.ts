@@ -74,8 +74,8 @@ export const runSchema = z
     "Add text or an image to start the chain.",
   );
 
-export function gatewayModel(identifier: string) {
-  return identifier.includes("/") ? identifier : `google/${identifier}`;
+export function geminiModelId(identifier: string) {
+  return identifier.trim().replace(/^(google|models)\//, "");
 }
-export const imageModelIds = new Set(["google/gemini-3.1-flash-image"]);
-export const textModelIds = new Set(["google/gemini-3.5-flash-lite"]);
+export const imageModelIds = new Set(["gemini-3.1-flash-image"]);
+export const textModelIds = new Set(["gemini-3.5-flash-lite"]);

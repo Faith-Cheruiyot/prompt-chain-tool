@@ -45,7 +45,7 @@ import {
   X,
 } from "lucide-react";
 import type { Chain, Model, Output, Run, Step } from "@/lib/types";
-import { gatewayModel, textModelIds } from "@/lib/validation";
+import { geminiModelId, textModelIds } from "@/lib/validation";
 import { ThemeSwitch } from "./theme-switch";
 import { Brand } from "./brand";
 import { Dialog } from "./dialog";
@@ -193,7 +193,7 @@ export function Studio({
       position,
       name: "Untitled step",
       llm_model_id:
-        models.find((m) => textModelIds.has(gatewayModel(m.model_identifier)))
+        models.find((m) => textModelIds.has(geminiModelId(m.model_identifier)))
           ?.id || "",
       system_prompt: "",
       user_prompt: "",
@@ -1313,8 +1313,8 @@ export function Studio({
                         {!running && <ArrowRight size={16} />}
                       </button>
                       <p className="run-credit">
-                        <ShieldCheck size={12} /> Private outputs · Uses AI
-                        Gateway credits
+                        <ShieldCheck size={12} /> Private outputs · Powered by
+                        Gemini
                       </p>
                     </div>
                   </aside>

@@ -2,13 +2,14 @@ import { generateText } from "ai";
 import { requireAdmin, apiError } from "@/lib/auth";
 import { sameOrigin } from "@/lib/http";
 import {
-  gatewayModel,
+  geminiModelId,
   imageModelIds,
   textModelIds,
   runSchema,
 } from "@/lib/validation";
 import { executeChain } from "@/lib/engine";
 import { generationErrorMessage } from "@/lib/generation-error";
+import { createGeminiProvider, GeminiConfigurationError } from "@/lib/gemini";
 import type { Step, Model, Output } from "@/lib/types";
 import { z } from "zod";
 
@@ -29,8 +30,7 @@ export async function POST(
         { error: parsed.error.issues[0].message },
         { status: 400 },
       );
-    // The AI SDK resolves Gateway credentials per request, including Vercel's
-    // OIDC request context, which need not be present in process.env.
+    const gemini = createGeminiProvider();
     const [{ data: chain, error }, { data: allModels, error: modelError }] =
       await Promise.all([
         supabase
@@ -60,7 +60,7 @@ export async function POST(
       if (
         !model ||
         !(step.output_type === "image" ? imageModelIds : textModelIds).has(
-          gatewayModel(model.model_identifier),
+          geminiModelId(model.model_identifier),
         )
       )
         return Response.json(
@@ -131,9 +131,11 @@ export async function POST(
             },
             async generate(step, prompt, system, inputImage) {
               const result = await generateText({
-                model: gatewayModel(
-                  models.find((m) => m.id === step.llm_model_id)!
-                    .model_identifier,
+                model: gemini(
+                  geminiModelId(
+                    models.find((m) => m.id === step.llm_model_id)!
+                      .model_identifier,
+                  ),
                 ),
                 system: system || undefined,
                 messages: [
@@ -239,6 +241,8 @@ export async function POST(
       },
     });
   } catch (error) {
+    if (error instanceof GeminiConfigurationError)
+      return Response.json({ error: error.message }, { status: 503 });
     return apiError(error);
   }
 }
