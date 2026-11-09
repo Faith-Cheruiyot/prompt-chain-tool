@@ -31,6 +31,8 @@ https://YOUR-PRODUCTION-DOMAIN/auth/callback
 
 Preserve the existing Site URL and other redirect URLs because this database is shared with other apps. The Google provider is already configured in the Humor Project. Your Google account must have a matching `profiles.user_id` with `is_superadmin = true`. The app never grants its own users that role.
 
+Vercel Production and Preview set `APP_URL=https://prompt-chain-tool-ruddy.vercel.app`. Sign-in first moves to this stable origin, then creates the PKCE cookie and starts Google OAuth. This keeps deployment-specific Vercel URLs from falling back to the shared Humor Project Site URL. Its exact `/auth/callback` URL must be in Supabase's redirect allowlist. Leave `APP_URL` blank for local development. For isolated preview authentication, use a dedicated allowed preview origin instead.
+
 For local generation, link the existing Vercel project and run `vercel env pull .env.local`, or add an AI Gateway key as `AI_GATEWAY_API_KEY`. Deployments use Vercel OIDC automatically. A funded Gateway account and access to the selected models are required. Never commit credentials.
 
 ```sh
