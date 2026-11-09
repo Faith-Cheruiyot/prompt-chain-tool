@@ -8,6 +8,7 @@ import {
   runSchema,
 } from "@/lib/validation";
 import { executeChain } from "@/lib/engine";
+import { generationErrorMessage } from "@/lib/generation-error";
 import type { Step, Model, Output } from "@/lib/types";
 import { z } from "zod";
 
@@ -28,14 +29,8 @@ export async function POST(
         { error: parsed.error.issues[0].message },
         { status: 400 },
       );
-    if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN)
-      return Response.json(
-        {
-          error:
-            "Connect AI Gateway to run this chain. On Vercel, enable OIDC. Locally, run vercel env pull or add an AI Gateway key.",
-        },
-        { status: 503 },
-      );
+    // The AI SDK resolves Gateway credentials per request, including Vercel's
+    // OIDC request context, which need not be present in process.env.
     const [{ data: chain, error }, { data: allModels, error: modelError }] =
       await Promise.all([
         supabase
@@ -212,18 +207,11 @@ export async function POST(
           if (error) throw error;
           emit({ type: "completed" });
         } catch (error) {
-          const statusCode =
-            error && typeof error === "object" && "statusCode" in error
-              ? error.statusCode
-              : null;
-          const message =
-            statusCode === 402
-              ? "AI Gateway credits or budget are exhausted. Add credits, then retry."
-              : statusCode === 429
-                ? "The model is busy. Wait a moment, then retry."
-                : deadline.aborted
-                  ? "This run reached its time limit. Try fewer steps."
-                  : `Step ${position} could not finish. Check model access and AI Gateway configuration, then retry.`;
+          const message = generationErrorMessage(
+            error,
+            position,
+            deadline.aborted,
+          );
           await supabase
             .from("prompt_chain_runs")
             .update({
