@@ -3,7 +3,7 @@ import { sameOrigin } from "@/lib/http";
 import {
   chainSchema,
   checkReferences,
-  geminiModelId,
+  modelId,
   imageModelIds,
   textModelIds,
 } from "@/lib/validation";
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
           return (
             !model ||
             !(s.output_type === "image" ? imageModelIds : textModelIds).has(
-              geminiModelId(model.model_identifier),
+              modelId(model.model_identifier),
             )
           );
         })

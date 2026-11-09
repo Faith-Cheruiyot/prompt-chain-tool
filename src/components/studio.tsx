@@ -45,7 +45,7 @@ import {
   X,
 } from "lucide-react";
 import type { Chain, Model, Output, Run, Step } from "@/lib/types";
-import { geminiModelId, textModelIds } from "@/lib/validation";
+import { defaultModel } from "@/lib/validation";
 import { ThemeSwitch } from "./theme-switch";
 import { Brand } from "./brand";
 import { Dialog } from "./dialog";
@@ -192,9 +192,7 @@ export function Studio({
       prompt_chain_id: chainId,
       position,
       name: "Untitled step",
-      llm_model_id:
-        models.find((m) => textModelIds.has(geminiModelId(m.model_identifier)))
-          ?.id || "",
+      llm_model_id: defaultModel(models, "text")?.id || "",
       system_prompt: "",
       user_prompt: "",
       temperature: null,
@@ -1313,8 +1311,8 @@ export function Studio({
                         {!running && <ArrowRight size={16} />}
                       </button>
                       <p className="run-credit">
-                        <ShieldCheck size={12} /> Private outputs · Powered by
-                        Gemini
+                        <ShieldCheck size={12} /> Private outputs · Uses your
+                        API account
                       </p>
                     </div>
                   </aside>

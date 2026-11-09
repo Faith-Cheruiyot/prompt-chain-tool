@@ -5,25 +5,14 @@ import {
   createGeminiProvider,
   GeminiConfigurationError,
 } from "../src/lib/gemini";
-import {
-  geminiModelId,
-  imageModelIds,
-  textModelIds,
-} from "../src/lib/validation";
+import { modelId, imageModelIds, textModelIds } from "../src/lib/validation";
 
 test("existing database model identifiers resolve to direct Gemini IDs", () => {
   for (const prefix of ["", "google/", "models/"]) {
-    assert.ok(
-      textModelIds.has(geminiModelId(`${prefix}gemini-3.5-flash-lite`)),
-    );
-    assert.ok(
-      imageModelIds.has(geminiModelId(`${prefix}gemini-3.1-flash-image`)),
-    );
+    assert.ok(textModelIds.has(modelId(`${prefix}gemini-3.5-flash-lite`)));
+    assert.ok(imageModelIds.has(modelId(`${prefix}gemini-3.1-flash-image`)));
   }
-  assert.equal(
-    textModelIds.has(geminiModelId("other/gemini-3.5-flash-lite")),
-    false,
-  );
+  assert.equal(textModelIds.has(modelId("other/gemini-3.5-flash-lite")), false);
 });
 
 test("a missing Gemini key fails before making a provider request", () => {
@@ -59,7 +48,7 @@ test("text generation calls Google directly with the server-side key", async () 
     });
   });
   const result = await generateText({
-    model: google(geminiModelId("google/gemini-3.5-flash-lite")),
+    model: google(modelId("google/gemini-3.5-flash-lite")),
     prompt: "Write one caption.",
     maxRetries: 0,
   });
@@ -95,7 +84,7 @@ test("Gemini image requests preserve input images and return generated files", a
     });
   });
   const result = await generateText({
-    model: google(geminiModelId("google/gemini-3.1-flash-image")),
+    model: google(modelId("google/gemini-3.1-flash-image")),
     messages: [
       {
         role: "user",

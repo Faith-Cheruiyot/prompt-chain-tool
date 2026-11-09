@@ -2,6 +2,33 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generationErrorMessage } from "../src/lib/generation-error";
 
+test("OpenAI authentication, quota, and access failures stay provider-specific", () => {
+  assert.match(
+    generationErrorMessage({ statusCode: 401 }, 1, false, "openai"),
+    /OPENAI_API_KEY/,
+  );
+  assert.match(
+    generationErrorMessage({ statusCode: 403 }, 1, false, "openai"),
+    /OpenAI.*permissions/,
+  );
+  assert.match(
+    generationErrorMessage({ statusCode: 404 }, 1, false, "openai"),
+    /OpenAI API key/,
+  );
+  assert.match(
+    generationErrorMessage({ statusCode: 429 }, 1, false, "openai"),
+    /rate limit/,
+  );
+  const quota = Object.assign(
+    new Error("insufficient_quota: private provider response"),
+    { statusCode: 429 },
+  );
+  const wrapped = new Error("Image generation failed", { cause: quota });
+  const message = generationErrorMessage(wrapped, 1, false, "openai");
+  assert.match(message, /OpenAI.*credits/);
+  assert.doesNotMatch(message, /private provider response|Gemini/);
+});
+
 test("Gemini key and permission failures explain distinct fixes", () => {
   assert.match(
     generationErrorMessage({ statusCode: 401 }, 1, false),

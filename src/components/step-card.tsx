@@ -11,7 +11,12 @@ import {
   Type,
 } from "lucide-react";
 import type { Step, Model } from "@/lib/types";
-import { geminiModelId, imageModelIds, textModelIds } from "@/lib/validation";
+import {
+  defaultModel,
+  modelId,
+  imageModelIds,
+  textModelIds,
+} from "@/lib/validation";
 export function StepCard({
   step,
   index,
@@ -43,7 +48,7 @@ export function StepCard({
   } = useSortable({ id: step.id });
   const available = models.filter((m) =>
     (step.output_type === "image" ? imageModelIds : textModelIds).has(
-      geminiModelId(m.model_identifier),
+      modelId(m.model_identifier),
     ),
   );
   const model = models.find((m) => m.id === step.llm_model_id);
@@ -144,12 +149,7 @@ export function StepCard({
                 value={step.output_type}
                 onChange={(e) => {
                   const output_type = e.target.value as Step["output_type"];
-                  const candidate = models.find((m) =>
-                    (output_type === "image"
-                      ? imageModelIds
-                      : textModelIds
-                    ).has(geminiModelId(m.model_identifier)),
-                  );
+                  const candidate = defaultModel(models, output_type);
                   onChange({ output_type, llm_model_id: candidate?.id || "" });
                 }}
               >

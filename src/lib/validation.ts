@@ -74,8 +74,30 @@ export const runSchema = z
     "Add text or an image to start the chain.",
   );
 
-export function geminiModelId(identifier: string) {
-  return identifier.trim().replace(/^(google|models)\//, "");
+export function modelId(identifier: string) {
+  return identifier.trim().replace(/^(google|openai|models)\//, "");
 }
-export const imageModelIds = new Set(["gemini-3.1-flash-image"]);
-export const textModelIds = new Set(["gemini-3.5-flash-lite"]);
+export const imageModelIds = new Set([
+  "gpt-image-2.5-flare",
+  "gemini-3.1-flash-image",
+]);
+export const textModelIds = new Set(["gpt-6-luna", "gemini-3.5-flash-lite"]);
+
+export function modelProvider(identifier: string): "openai" | "google" {
+  return modelId(identifier).startsWith("gpt-") ? "openai" : "google";
+}
+
+export function defaultModel<T extends { model_identifier: string }>(
+  models: T[],
+  output: "text" | "image",
+) {
+  const supported = models.filter((m) =>
+    (output === "image" ? imageModelIds : textModelIds).has(
+      modelId(m.model_identifier),
+    ),
+  );
+  return (
+    supported.find((m) => modelProvider(m.model_identifier) === "openai") ??
+    supported[0]
+  );
+}

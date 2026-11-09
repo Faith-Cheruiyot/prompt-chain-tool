@@ -2,7 +2,8 @@ import { generateText } from "ai";
 import { requireAdmin, apiError } from "@/lib/auth";
 import { sameOrigin } from "@/lib/http";
 import {
-  geminiModelId,
+  modelId,
+  modelProvider,
   imageModelIds,
   textModelIds,
   runSchema,
@@ -10,6 +11,11 @@ import {
 import { executeChain } from "@/lib/engine";
 import { generationErrorMessage } from "@/lib/generation-error";
 import { createGeminiProvider, GeminiConfigurationError } from "@/lib/gemini";
+import {
+  createOpenAIProvider,
+  generateOpenAIStep,
+  OpenAIConfigurationError,
+} from "@/lib/openai";
 import type { Step, Model, Output } from "@/lib/types";
 import { z } from "zod";
 
@@ -30,7 +36,6 @@ export async function POST(
         { error: parsed.error.issues[0].message },
         { status: 400 },
       );
-    const gemini = createGeminiProvider();
     const [{ data: chain, error }, { data: allModels, error: modelError }] =
       await Promise.all([
         supabase
@@ -60,7 +65,7 @@ export async function POST(
       if (
         !model ||
         !(step.output_type === "image" ? imageModelIds : textModelIds).has(
-          geminiModelId(model.model_identifier),
+          modelId(model.model_identifier),
         )
       )
         return Response.json(
@@ -70,6 +75,19 @@ export async function POST(
           { status: 400 },
         );
     }
+    const neededProviders = new Set(
+      steps.map((step) =>
+        modelProvider(
+          models.find((m) => m.id === step.llm_model_id)!.model_identifier,
+        ),
+      ),
+    );
+    const openai = neededProviders.has("openai")
+      ? createOpenAIProvider()
+      : null;
+    const gemini = neededProviders.has("google")
+      ? createGeminiProvider()
+      : null;
     let image: Uint8Array | null = null;
     if (parsed.data.image_path) {
       if (
@@ -130,13 +148,26 @@ export async function POST(
               emit({ type: "step", position: n });
             },
             async generate(step, prompt, system, inputImage) {
+              const identifier = models.find(
+                (m) => m.id === step.llm_model_id,
+              )!.model_identifier;
+              const abortSignal = AbortSignal.any([
+                deadline,
+                AbortSignal.timeout(90000),
+              ]);
+              if (modelProvider(identifier) === "openai")
+                return generateOpenAIStep(openai!, {
+                  identifier,
+                  outputType: step.output_type,
+                  prompt,
+                  system,
+                  inputImage,
+                  temperature:
+                    step.temperature === null ? null : Number(step.temperature),
+                  abortSignal,
+                });
               const result = await generateText({
-                model: gemini(
-                  geminiModelId(
-                    models.find((m) => m.id === step.llm_model_id)!
-                      .model_identifier,
-                  ),
-                ),
+                model: gemini!(modelId(identifier)),
                 system: system || undefined,
                 messages: [
                   {
@@ -160,10 +191,7 @@ export async function POST(
                       },
                     }
                   : {}),
-                abortSignal: AbortSignal.any([
-                  deadline,
-                  AbortSignal.timeout(90000),
-                ]),
+                abortSignal,
                 maxRetries: 0,
               });
               return {
@@ -213,6 +241,10 @@ export async function POST(
             error,
             position,
             deadline.aborted,
+            modelProvider(
+              models.find((m) => m.id === steps[position - 1].llm_model_id)!
+                .model_identifier,
+            ),
           );
           await supabase
             .from("prompt_chain_runs")
@@ -241,7 +273,10 @@ export async function POST(
       },
     });
   } catch (error) {
-    if (error instanceof GeminiConfigurationError)
+    if (
+      error instanceof GeminiConfigurationError ||
+      error instanceof OpenAIConfigurationError
+    )
       return Response.json({ error: error.message }, { status: 503 });
     return apiError(error);
   }

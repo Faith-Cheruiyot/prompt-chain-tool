@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin, AccessError } from "@/lib/auth";
 import { Studio } from "@/components/studio";
-import { geminiModelId, textModelIds, imageModelIds } from "@/lib/validation";
+import { modelId, textModelIds, imageModelIds } from "@/lib/validation";
 import type { Chain, Model, Run } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export default async function Page() {
@@ -36,8 +36,8 @@ export default async function Page() {
     );
   const supported = models.data.filter(
     (m) =>
-      textModelIds.has(geminiModelId(m.model_identifier)) ||
-      imageModelIds.has(geminiModelId(m.model_identifier)),
+      textModelIds.has(modelId(m.model_identifier)) ||
+      imageModelIds.has(modelId(m.model_identifier)),
   );
   return (
     <Studio
