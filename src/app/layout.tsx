@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/providers";
 import "./globals.css";
+import "./brick-theme.css";
 export const metadata: Metadata = {
-  title: "Chain Studio · Prompt chains",
+  title: "Chain Studio · The Humor Project",
   description:
     "Build, refine, and run creative prompt chains. A private workspace for superadmins.",
 };

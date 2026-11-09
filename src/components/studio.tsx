@@ -47,6 +47,7 @@ import {
 import type { Chain, Model, Output, Run, Step } from "@/lib/types";
 import { gatewayModel, textModelIds } from "@/lib/validation";
 import { ThemeSwitch } from "./theme-switch";
+import { Brand } from "./brand";
 import { Dialog } from "./dialog";
 import { StepCard } from "./step-card";
 import { dateLabel, mediaUrl, OutputView, RunHistory } from "./run-history";
@@ -514,13 +515,7 @@ export function Studio({
         />
       )}
       <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
-        <button className="brand" onClick={() => navigate("chains")}>
-          <span className="brand-icon">
-            <GitBranch size={21} />
-          </span>
-          chain<span className="brand-light">studio</span>
-          <span className="brand-dot">.</span>
-        </button>
+        <Brand onClick={() => navigate("chains")} />
         <div className="workspace-label">
           <span className="workspace-avatar">H</span>
           <span>
@@ -641,7 +636,9 @@ export function Studio({
             <>
               <div className="page-heading">
                 <div>
-                  <div className="section-kicker">YOUR CREATIVE WORKSPACE</div>
+                  <div className="section-kicker">
+                    THE HUMOR PROJECT / PROMPT CHAINS
+                  </div>
                   <h1>
                     Prompt chains<span className="title-dot">.</span>
                   </h1>

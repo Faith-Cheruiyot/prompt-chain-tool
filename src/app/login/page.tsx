@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { configured } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { Brand } from "@/components/brand";
 import {
   ArrowRight,
-  GitBranch,
   ShieldCheck,
   Sparkles,
   Image,
@@ -29,16 +29,10 @@ export default async function Login({
   return (
     <main className="login-layout">
       <section className="login-story">
-        <a href="/" className="brand">
-          <span className="brand-icon">
-            <GitBranch size={22} />
-          </span>
-          chain<span className="brand-light">studio</span>
-          <span className="brand-dot">.</span>
-        </a>
+        <Brand href="/" />
         <div className="story-body">
           <span className="eyebrow">
-            <span className="small-dot" /> A LITTLE INPUT. ENDLESS POSSIBILITY.
+            <span className="small-dot" /> THE HUMOR PROJECT / PROMPT CHAINS
           </span>
           <h1>
             Great ideas
