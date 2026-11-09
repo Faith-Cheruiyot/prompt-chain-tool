@@ -1,16 +1,13 @@
-import { generateText } from "ai";
 import { requireAdmin, apiError } from "@/lib/auth";
 import { sameOrigin } from "@/lib/http";
 import {
   modelId,
-  modelProvider,
   imageModelIds,
   textModelIds,
   runSchema,
 } from "@/lib/validation";
 import { executeChain } from "@/lib/engine";
 import { generationErrorMessage } from "@/lib/generation-error";
-import { createGeminiProvider, GeminiConfigurationError } from "@/lib/gemini";
 import {
   createOpenAIProvider,
   generateOpenAIStep,
@@ -75,19 +72,7 @@ export async function POST(
           { status: 400 },
         );
     }
-    const neededProviders = new Set(
-      steps.map((step) =>
-        modelProvider(
-          models.find((m) => m.id === step.llm_model_id)!.model_identifier,
-        ),
-      ),
-    );
-    const openai = neededProviders.has("openai")
-      ? createOpenAIProvider()
-      : null;
-    const gemini = neededProviders.has("google")
-      ? createGeminiProvider()
-      : null;
+    const openai = createOpenAIProvider();
     let image: Uint8Array | null = null;
     if (parsed.data.image_path) {
       if (
@@ -155,55 +140,14 @@ export async function POST(
                 deadline,
                 AbortSignal.timeout(90000),
               ]);
-              if (modelProvider(identifier) === "openai")
-                return generateOpenAIStep(openai!, {
-                  identifier,
-                  outputType: step.output_type,
-                  prompt,
-                  system,
-                  inputImage,
-                  temperature:
-                    step.temperature === null ? null : Number(step.temperature),
-                  abortSignal,
-                });
-              const result = await generateText({
-                model: gemini!(modelId(identifier)),
-                system: system || undefined,
-                messages: [
-                  {
-                    role: "user",
-                    content: inputImage
-                      ? [
-                          { type: "text", text: prompt },
-                          { type: "image", image: inputImage },
-                        ]
-                      : [{ type: "text", text: prompt }],
-                  },
-                ],
-                maxOutputTokens: step.output_type === "image" ? 8192 : 4096,
-                ...(step.temperature === null
-                  ? {}
-                  : { temperature: Number(step.temperature) }),
-                ...(step.output_type === "image"
-                  ? {
-                      providerOptions: {
-                        google: { responseModalities: ["TEXT", "IMAGE"] },
-                      },
-                    }
-                  : {}),
+              return generateOpenAIStep(openai, {
+                identifier,
+                outputType: step.output_type,
+                prompt,
+                system,
+                inputImage,
                 abortSignal,
-                maxRetries: 0,
               });
-              return {
-                text: result.text,
-                images: result.files
-                  .filter((f) =>
-                    ["image/png", "image/jpeg", "image/webp"].includes(
-                      f.mediaType,
-                    ),
-                  )
-                  .map((f) => ({ data: f.uint8Array, mediaType: f.mediaType })),
-              };
             },
             async saveImage(step, file, index) {
               const ext =
@@ -241,10 +185,6 @@ export async function POST(
             error,
             position,
             deadline.aborted,
-            modelProvider(
-              models.find((m) => m.id === steps[position - 1].llm_model_id)!
-                .model_identifier,
-            ),
           );
           await supabase
             .from("prompt_chain_runs")
@@ -273,10 +213,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    if (
-      error instanceof GeminiConfigurationError ||
-      error instanceof OpenAIConfigurationError
-    )
+    if (error instanceof OpenAIConfigurationError)
       return Response.json({ error: error.message }, { status: 503 });
     return apiError(error);
   }

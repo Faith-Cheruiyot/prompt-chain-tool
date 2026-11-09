@@ -218,23 +218,6 @@ export function StepCard({
                 placeholder="Set a role, tone, or constraints."
               />
             </label>
-            <label>
-              Temperature{" "}
-              <span className="optional">Leave blank for model default</span>
-              <input
-                type="number"
-                min="0"
-                max="2"
-                step="0.1"
-                value={step.temperature ?? ""}
-                onChange={(e) =>
-                  onChange({
-                    temperature:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-              />
-            </label>
           </details>
         </div>
       ) : (

@@ -75,17 +75,10 @@ export const runSchema = z
   );
 
 export function modelId(identifier: string) {
-  return identifier.trim().replace(/^(google|openai|models)\//, "");
+  return identifier.trim().replace(/^openai\//, "");
 }
-export const imageModelIds = new Set([
-  "gpt-image-2.5-flare",
-  "gemini-3.1-flash-image",
-]);
-export const textModelIds = new Set(["gpt-6-luna", "gemini-3.5-flash-lite"]);
-
-export function modelProvider(identifier: string): "openai" | "google" {
-  return modelId(identifier).startsWith("gpt-") ? "openai" : "google";
-}
+export const imageModelIds = new Set(["gpt-image-2.5-flare"]);
+export const textModelIds = new Set(["gpt-5-nano"]);
 
 export function defaultModel<T extends { model_identifier: string }>(
   models: T[],
@@ -96,8 +89,5 @@ export function defaultModel<T extends { model_identifier: string }>(
       modelId(m.model_identifier),
     ),
   );
-  return (
-    supported.find((m) => modelProvider(m.model_identifier) === "openai") ??
-    supported[0]
-  );
+  return supported[0];
 }

@@ -28,19 +28,11 @@ export async function generateOpenAIStep(
     prompt: string;
     system: string;
     inputImage: Uint8Array | null;
-    temperature: number | null;
     abortSignal: AbortSignal;
   },
 ): Promise<Generation> {
-  const {
-    identifier,
-    outputType,
-    prompt,
-    system,
-    inputImage,
-    temperature,
-    abortSignal,
-  } = options;
+  const { identifier, outputType, prompt, system, inputImage, abortSignal } =
+    options;
   if (outputType === "image") {
     const instruction = [system, prompt].filter(Boolean).join("\n\n");
     const result = await generateImage({
@@ -50,7 +42,7 @@ export async function generateOpenAIStep(
         : instruction,
       size: "1024x1024",
       n: 1,
-      providerOptions: { openai: { quality: "medium", outputFormat: "png" } },
+      providerOptions: { openai: { quality: "low", outputFormat: "png" } },
       abortSignal,
       maxRetries: 0,
     });
@@ -76,9 +68,8 @@ export async function generateOpenAIStep(
           : [{ type: "text", text: prompt }],
       },
     ],
-    maxOutputTokens: 4096,
-    ...(temperature === null ? {} : { temperature }),
-    providerOptions: { openai: { store: false, reasoningEffort: "none" } },
+    maxOutputTokens: 2048,
+    providerOptions: { openai: { store: false, reasoningEffort: "minimal" } },
     abortSignal,
     maxRetries: 0,
   });
